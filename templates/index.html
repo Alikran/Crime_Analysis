@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicago Crime Data</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="header-container">
+      <h1>Chicago Crime Data</h1>
+      <form method="GET" action="/">
+          <label for="ward">Filter by Ward:</label>
+          <select name="ward" id="ward">
+              <option value="">All</option>
+              {% for ward in wards %}
+              <option value="{{ ward }}">{{ ward }}</option>
+              {% endfor %}
+          </select>
+
+          <label for="date_from">Filter by Date Range:</label>
+          From: <input type="date" name="date_from" id="date_from">
+          To: <input type="date" name="date_to" id="date_to">
+
+          <label for="primary_type">Filter by Primary Description:</label>
+          <select name="primary_type" id="primary_type">
+              <option value="">All</option>
+              {% for type in primary_types %}
+              <option value="{{ type }}">{{ type }}</option>
+              {% endfor %}
+          </select>
+
+          <input type="submit" value="Filter">
+      </form>
+  </div>
+
+  <div class="main-content-container">
+      <div id="data-section">
+          <h2>Crime Data</h2>
+          <table>
+            <thead>
+                <tr>
+                    {% if crimes %}
+                        {% for key in (crimes[0].keys() | list)[:12] %}
+                            <th data-column="{{ key }}">{{ key }}</th>
+                        {% endfor %}
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for crime in crimes %}
+                    <tr>
+                        {% for key, value in (crime.items() | list)[:12] %}
+                            <td data-column="{{ key }}">{{ value }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+      </div>
+      <div id="map-section">
+          {% if map_html %}
+              <h2>Crime Locations</h2>
+              <div id="map">{{ map_html|safe }}</div>
+          {% endif %}
+      </div>
+  </div>
+
+  <h2>Most Common Crime Types</h2>
+  {% if most_common_crimes %}
+  <ul>
+      {% for crime, count in most_common_crimes %}
+      <li>{{ crime }}: {{ count }}</li>
+      {% endfor %}
+  </ul>
+  {% else %}
+  <p>No crime data available to determine common types.</p>
+  {% endif %}
+  
+</body>
+</html>
