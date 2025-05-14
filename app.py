@@ -3,13 +3,23 @@ import requests
 import folium
 import pandas as pd
 from datetime import datetime
-from collections import Counter``
+from collections import Counter
+from folium.plugins import MarkerCluster
 
 # creates an instance of the Flask application
 app = Flask(__name__)
 
 # get chicago crime dataset API endpoint
-API_ENDPOINT = "https://data.cityofchicago.org/resource/x2n5-8w5q.json?$limit=10000" # Increased limit for more data
+API_ENDPOINT = "https://data.cityofchicago.org/resource/x2n5-8w5q.json?$limit=1000" # Increased limit for more data
+
+# create custom cluster image
+def create_cluster_icon(cluster):
+    count = len(cluster.leaflet_ids)
+    size = 'large' if count > 100 else 'medium' if count > 50 else 'small'
+    image_path = '/static/images/chi_star.png'  # Path to your image in the static folder
+    html = f'<div style="width: 30px; height: 30px; border-radius: 15px; display: flex; justify-content: center; align-items: center;"><img src="{image_path}" style="width: 100%; height: 100%; border-radius: 15px;"></div>'
+    return folium.DivIcon(html=html, className=f'marker-cluster-{size}', icon_size=(30, 30))
+
 
 # the function that will be called when the user visits the root URL.
 @app.route('/', methods=['GET'])
@@ -73,11 +83,12 @@ def index():
             if not filtered_crimes_df_valid_coords.empty:
                 m = folium.Map(location=[41.8781, -87.6298], zoom_start=11) # Chicago's coordinates
                 folium.TileLayer('OpenStreetMap').add_to(m) # Using OpenStreetMap for now
+                marker_cluster = MarkerCluster(icon_create_function=create_cluster_icon).add_to(m)
                 for index, row in filtered_crimes_df_valid_coords.iterrows():
                     lat = row['latitude']
                     lon = row['longitude']
                     primary_description = row['_primary_decsription']
-                    folium.Marker([lat, lon], popup=primary_description).add_to(m)
+                    folium.Marker([lat, lon], popup=primary_description).add_to(marker_cluster)
                     
                 map_html = m._repr_html_() # Get the HTML representation of the map
             else:

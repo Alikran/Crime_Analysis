@@ -1,81 +1,105 @@
 body {
-  font-family: sans-serif;
-  margin: 20px;
-  max-height: 100vh; /* Limit the maximum height of the body to the viewport height */
-  overflow-y: auto; /* Add a scrollbar to the body if content exceeds viewport */
+    font-family: sans-serif;
+    margin: 20px;
+    display: grid; /* Enable CSS Grid for the body */
+    grid-template-areas:
+        "top-left title top-right"
+        "filter filter filter"
+        "common map future"
+        "common map future" /* Duplicate the map row to give it more space if needed */
+        "table table table";
+    grid-template-rows: auto auto auto auto auto; /* Add another auto row */
+    grid-template-columns: auto 1fr auto; /* Adjust column widths as needed */
+    gap: 10px;
+    align-items: start; /* Align items to the start of the grid cells */
+    min-height: 100vh; /* Ensure the body takes at least the full viewport height */
 }
 
 h1 {
-  text-align: center;
-  margin-bottom: 20px;
+   text-align: center; /* Keep the header text centered within its own space */
+    margin-bottom: 0; /* Remove default bottom margin to control spacing with the flex container */
 }
 
-.header-container {
-  text-align: center;
-  margin-bottom: 20px;
+.filter-section {
+    grid-area: filter;
+    display: flex;
+    justify-content: center; /* Center the form horizontally */
+    gap: 20px;
+    margin-bottom: 20px;
 }
 
-.header-container form {
-  display: inline-block;
-  text-align: left;
-}
-
-.main-content-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: flex-start;
-  /* Consider a max-height for the main container if needed */
-}
-
-#data-section {
-  width: auto;
-  min-width: 40%;
-  max-width: 50%;
-  height: 60vh; /* Set height as a percentage of the viewport height */
-  overflow-y: auto;
-  order: 1;
-}
-
-#data-section h2,
-#map-section h2 {
-    text-align: center; /* Center the text within the h2 elements */
-    margin-bottom: 10px; /* Add a little space below the titles */
+#common-crimes {
+    grid-area: common;
+    padding: 10px;
+    border: 1px solid #eee;
 }
 
 #map-section {
-  width: 40vw; /* Set width as a percentage of the viewport width */
-  min-width: 400px; /* Ensure a minimum width */
-  height: 60vh; /* Set height as a percentage of the viewport height */
-  order: 2;
+    grid-area: map;
+    padding: 10px;
+    border: 1px solid #eee;
+    height: auto; /* Let the height be determined by content */
+    overflow: hidden;
 }
 
 #map {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
+    height: 100%;
+    width: 100%;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
+#future-feature {
+    grid-area: future;
+    padding: 10px;
+    border: 1px solid #eee;
+}
+
+#data-table-container {
+    grid-area: table;
+    overflow-x: auto; /* Keep horizontal scroll for wide tables */
+    max-height: 400px; /* Set a maximum height for the table container */
+    overflow-y: auto; /* Enable vertical scrolling when content overflows */
+    padding: 10px;
+    border: 1px solid #eee;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
 th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
 }
 
 th {
-  background-color: #f2f2f2;
-  font-weight: bold;
+    background-color: #f2f2f2;
+    font-weight: bold;
 }
 
 th[data-column^="@computed_region"],
 td[data-column^="@computed_region"] {
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.top-images-container {
+    display: flex;
+    width: 400%; /* Adjust width as needed */
+    justify-content: space-between; /* Space out the images and the (empty) div */
+    align-items: center; /* Vertically align items in the center */
+    margin-bottom: 20px; /* Space below the images and header */
+}
+
+.top-images-container #top-left-image,
+.top-images-container #top-right-image {
+    width: 550px; /* Or your desired width */
+    height: 250px;
 }

@@ -5,77 +5,190 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chicago Crime Data</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center content horizontally */
+            max-height: 100vh;
+            overflow-y: auto;
+        }
+
+        .top-images-container {
+            display: flex;
+            width: 90%; /* Adjust width as needed */
+            justify-content: space-between; /* Space out the images */
+            align-items: flex-start; /* Align images to the top */
+            margin-bottom: 20px; /* Space below the images */
+        }
+
+        #top-left-image, #top-right-image {
+            width: 150px; /* Adjust image width */
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-section {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-areas:
+                "common map future"
+                "table table table";
+            grid-template-rows: auto 1fr;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 10px;
+            width: 90%; /* Match the width of the images container */
+        }
+
+        #common-crimes {
+            grid-area: common;
+            padding: 10px;
+            border: 1px solid #eee;
+        }
+
+        #map-section {
+            grid-area: map;
+            padding: 10px;
+            border: 1px solid #eee;
+            height: 400px; /* Adjust map height */
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        #future-feature {
+            grid-area: future;
+            padding: 10px;
+            border: 1px solid #eee;
+        }
+
+        #data-table-container {
+            grid-area: table;
+            overflow-x: auto;
+            padding: 10px;
+            border: 1px solid #eee;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-  <div class="header-container">
-      <h1>Chicago Crime Data</h1>
-      <form method="GET" action="/">
-          <label for="ward">Filter by Ward:</label>
-          <select name="ward" id="ward">
-              <option value="">All</option>
-              {% for ward in wards %}
-              <option value="{{ ward }}">{{ ward }}</option>
-              {% endfor %}
-          </select>
+    <div class="top-images-container">
+        <img id="top-left-image" src="{{ url_for('static', filename='images/Flag_of_Chicago,_Illinois.png') }}" alt="Left Image">
+        <div>
+            <h1>Chicago Crime Data</h1>
 
-          <label for="date_from">Filter by Date Range:</label>
-          From: <input type="date" name="date_from" id="date_from">
-          To: <input type="date" name="date_to" id="date_to">
-
-          <label for="primary_type">Filter by Primary Description:</label>
-          <select name="primary_type" id="primary_type">
-              <option value="">All</option>
-              {% for type in primary_types %}
-              <option value="{{ type }}">{{ type }}</option>
-              {% endfor %}
-          </select>
-
-          <input type="submit" value="Filter">
-      </form>
-  </div>
-
-  <div class="main-content-container">
-      <div id="data-section">
-          <h2>Crime Data</h2>
-          <table>
-            <thead>
-                <tr>
-                    {% if crimes %}
-                        {% for key in (crimes[0].keys() | list)[:12] %}
-                            <th data-column="{{ key }}">{{ key }}</th>
+        <div class="filter-section">
+            <form method="GET" class="d-flex gap-2">
+                <div class="form-group">
+                    <label for="ward">Ward:</label>
+                    <select class="form-control" id="ward" name="ward">
+                        <option value="All">All</option>
+                        {% for ward in wards %}
+                            <option value="{{ ward }}">{{ ward }}</option>
                         {% endfor %}
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for crime in crimes %}
-                    <tr>
-                        {% for key, value in (crime.items() | list)[:12] %}
-                            <td data-column="{{ key }}">{{ value }}</td>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="date_from">Date From:</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from">
+                </div>
+                <div class="form-group">
+                    <label for="date_to">Date To:</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to">
+                </div>
+                <div class="form-group">
+                    <label for="primary_type">Primary Type:</label>
+                    <select class="form-control" id="primary_type" name="primary_type">
+                        <option value="All">All</option>
+                        {% for pt in primary_types %}
+                            <option value="{{ pt }}">{{ pt }}</option>
                         {% endfor %}
-                    </tr>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+            </form>
+        </div>
+        </div> <img id="top-right-image" src="{{ url_for('static', filename='images/Flag_of_Chicago,_Illinois.png') }}" alt="Right Image">
+    </div>
+
+    <div class="main-grid">
+        <div id="common-crimes" style="grid-area: common;">
+            <h2>Most Common Crimes</h2>
+            {% if most_common_crimes %}
+            <ul>
+                {% for crime, count in most_common_crimes %}
+                <li>{{ crime }}: {{ count }}</li>
                 {% endfor %}
-            </tbody>
-        </table>
-      </div>
-      <div id="map-section">
-          {% if map_html %}
-              <h2>Crime Locations</h2>
-              <div id="map">{{ map_html|safe }}</div>
-          {% endif %}
-      </div>
-  </div>
+            </ul>
+            {% else %}
+            <p>No crime data available to determine common types.</p>
+            {% endif %}
+        </div>
+        <div id="map-section" style="grid-area: map;">
+            <div id="map">
+                {{ map_html|safe }}
+            </div>
+        </div>
+        <div id="future-feature" style="grid-area: future;">
+            <h2>Future Feature</h2>
+            <p>Space for your next visualization or analysis.</p>
+        </div>
+        <div id="data-table-container" style="grid-area: table;">
+            <h2>Crime Data</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        {% if crimes %}
+                            {% for key in (crimes[0].keys() | list)[:12] %}
+                                <th>{{ key }}</th>
+                            {% endfor %}
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for crime in crimes %}
+                        <tr>
+                            {% for item in (crime.items() | list)[:12] %}
+                                <td>{{ item[1] }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-  <h2>Most Common Crime Types</h2>
-  {% if most_common_crimes %}
-  <ul>
-      {% for crime, count in most_common_crimes %}
-      <li>{{ crime }}: {{ count }}</li>
-      {% endfor %}
-  </ul>
-  {% else %}
-  <p>No crime data available to determine common types.</p>
-  {% endif %}
-  
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
