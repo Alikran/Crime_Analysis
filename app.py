@@ -2,6 +2,8 @@ from flask import Flask, render_template, request
 import requests
 import folium
 import pandas as pd
+import json
+import geopandas as gpd
 from datetime import datetime
 from collections import Counter
 from folium.plugins import MarkerCluster
@@ -12,15 +14,8 @@ app = Flask(__name__)
 # get chicago crime dataset API endpoint
 API_ENDPOINT = "https://data.cityofchicago.org/resource/x2n5-8w5q.json?$limit=1000" # Increased limit for more data
 
-# create custom cluster image
-def create_cluster_icon(cluster):
-    count = len(cluster.leaflet_ids)
-    size = 'large' if count > 100 else 'medium' if count > 50 else 'small'
-    image_path = '/static/images/chi_star.png'  # Path to your image in the static folder
-    html = f'<div style="width: 30px; height: 30px; border-radius: 15px; display: flex; justify-content: center; align-items: center;"><img src="{image_path}" style="width: 100%; height: 100%; border-radius: 15px;"></div>'
-    return folium.DivIcon(html=html, className=f'marker-cluster-{size}', icon_size=(30, 30))
-
-
+# Chicago Wards GeoJSON API endpoint
+HOODS_GEOJSON_URL = "https://data.cityofchicago.org/resource/y6yq-dbs2.geojson"
 # the function that will be called when the user visits the root URL.
 @app.route('/', methods=['GET'])
 def index():
@@ -70,7 +65,7 @@ def index():
         print(f"\nNumber of crimes in filtered_crimes_df: {len(filtered_crimes_df)}")
         print(f"First row of filtered_crimes_df (if not empty):\n{filtered_crimes_df.head(1)}")
 
-             # Create the Folium map
+                # Create the Folium map
         if not filtered_crimes_df.empty:
             # Ensure latitude and longitude are numeric and not NaN
             filtered_crimes_df['latitude'] = pd.to_numeric(filtered_crimes_df['latitude'], errors='coerce')
@@ -82,29 +77,49 @@ def index():
 
             if not filtered_crimes_df_valid_coords.empty:
                 m = folium.Map(location=[41.8781, -87.6298], zoom_start=11) # Chicago's coordinates
-                folium.TileLayer('OpenStreetMap').add_to(m) # Using OpenStreetMap for now
-                marker_cluster = MarkerCluster(icon_create_function=create_cluster_icon).add_to(m)
+                folium.TileLayer('CartoDB positron').add_to(m) # Using OpenStreetMap for now
+                marker_cluster = MarkerCluster().add_to(m)
                 for index, row in filtered_crimes_df_valid_coords.iterrows():
                     lat = row['latitude']
                     lon = row['longitude']
                     primary_description = row['_primary_decsription']
                     folium.Marker([lat, lon], popup=primary_description).add_to(marker_cluster)
-                    
+                 # Add Chicago Neigborhoods boundaries from shapefile
+                try:
+                    response = requests.get(HOODS_GEOJSON_URL)
+                    response.raise_for_status()
+                    hood_data = response.json()
+                    folium.GeoJson(
+                        hood_data,
+                        name='Chicago Neigborhoods',
+                        style_function=lambda feature: {
+                            'color': '#41B6E6',
+                            'weight': 3,
+                            'fillOpacity': 0
+                        },
+                        highlight_function=lambda feature: {
+                        'fillColor': '#EF002B',
+                        'color': '#EF002B',
+                        'weight': 3,
+                        'fillOpacity': 0.5,
+                        'cursor': 'pointer',
+                    },
+                    on_each_feature=lambda feature, layer: layer.on({
+                        'click': lambda e: e.target.setStyle({
+                            'fillColor': 'green',
+                            'fillOpacity': 0.7
+                        }).bringToFront() or e.target._map.fitBounds(e.target.getBounds())
+                    })
+                    ).add_to(m)
+                except requests.exceptions.RequestException as e:
+                    print(f"Error fetching Neigborhoods boundaries from API: {e}")
                 map_html = m._repr_html_() # Get the HTML representation of the map
             else:
                 map_html = "<p>No crimes with valid coordinates found based on the filters.</p>"
-                return render_template( # Add return here
-                    'index.html',
-                    crimes=filtered_crimes_df.to_dict('records'),
-                    primary_types=primary_descriptions,
-                    wards=wards,
-                    map_html=map_html,
-                    most_common_crimes=most_common_crimes
-                )
         else:
-            return "Failed to fetch crime data."
+            map_html = "<p>No crimes found based on the applied filters.</p>"
 
-        return render_template( # Ensure a return here as well (for the case where filtered_crimes_df is not empty but the inner if is)
+        return render_template(
             'index.html',
             crimes=filtered_crimes_df.to_dict('records'),
             primary_types=primary_descriptions,
@@ -112,6 +127,8 @@ def index():
             map_html=map_html,
             most_common_crimes=most_common_crimes
         )
+    else:
+        return "Failed to fetch crime data."
 
 def get_crime_data():
     try:

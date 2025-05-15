@@ -103,3 +103,11 @@ h2 {
     width: 550px; /* Or your desired width */
     height: 250px;
 }
+
+.leaflet-marker-icon.marker-cluster:hover,
+.leaflet-marker-icon.marker-cluster:hover div,
+.leaflet-marker-icon.marker-cluster:hover span {
+    outline: none !important;
+    border: none !important;
+}
+
